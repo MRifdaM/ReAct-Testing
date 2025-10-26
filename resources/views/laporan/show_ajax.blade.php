@@ -51,7 +51,7 @@
             </div>
             <div>
                 <label for="status_laporan"><strong>Status Laporan</strong></label>
-                <input type="text" class="form-control" id="laporan_deskripsi" rows="4" value="{{ ucfirst($laporan->status_laporan ?? '-') }}" readonly></textarea>
+                <input type="text" class="form-control" id="laporan_deskripsi" rows="4" value="{{ ucfirst($laporan->status_laporan ?? '-') }}" readonly>
             </div>
         </div>
         <div class="modal-footer">

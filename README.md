@@ -170,6 +170,10 @@ Langkah-langkah untuk menyiapkan environment terpisah khusus untuk menjalankan t
         DB_USERNAME=root            # <-- Sesuaikan username DB (bisa sama/beda dg dev)
         DB_PASSWORD=                # <-- Sesuaikan password DB (bisa sama/beda dg dev)
         ```
+    **Generate Application Key Testing:**
+    ```bash
+    php artisan key:generate --env=testing 
+    ```
     * **Penting:** Jangan masukkan file `.env` atau `.env.testing` ke Git. Gunakan `.env.example` sebagai template.
 
 ---
