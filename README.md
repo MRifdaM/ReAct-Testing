@@ -88,7 +88,7 @@ Langkah-langkah untuk menyiapkan proyek di environment lokal Anda untuk developm
 
 1.  **Clone Repository:**
     ```bash
-    git clone https://github.com/MRifdaM/ReAct-Testing.git(https://github.com/MRifdaM/ReAct-Testing.git)
+    git clone https://github.com/MRifdaM/ReAct-Testing.git
     cd [nama-direktori-proyek]
     ```
 
