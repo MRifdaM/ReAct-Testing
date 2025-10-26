@@ -17,6 +17,11 @@ describe('Fitur Login Pengguna', () => {
   const SELECTOR_USERNAME = 'input[name="username"]';
   const SELECTOR_PASSWORD = 'input[name="password"]';
   const SELECTOR_SUBMIT_BTN = 'button[type="submit"]';
+  const SELECTOR_LINK_SIGNUP = 'Sign up'; 
+  const REGISTER_PATH = '/register';
+  const REGISTER_PAGE_TITLE = 'Sign up - srtdash';  
+  const REGISTER_PAGE_HEADING = 'Sign up';
+  const SELECTOR_LEVEL_ID = 'select#level_id';
 
   // Teks & Pesan
   const WELCOME_MESSAGE = 'Halo, Mahasiswa1';
@@ -116,5 +121,23 @@ describe('Fitur Login Pengguna', () => {
       .should('exist')
       .invoke('prop', 'validationMessage')
       .should('contain', BROWSER_VALIDATION_MSG);
+  });
+
+  /**
+   * Test Case: Navigasi ke Halaman Registrasi
+   * Memastikan link "Sign up" ada di halaman login dan
+   * mengarahkan pengguna ke halaman registrasi saat diklik.
+   */
+  it('Harus bisa mengklik link "Sign up" dan diarahkan ke halaman registrasi', () => {
+    // Cari link "Sign up", pastikan terlihat, lalu klik
+    cy.contains('a', SELECTOR_LINK_SIGNUP).should('be.visible').click();
+
+    // Verifikasi URL sudah berpindah
+    cy.url().should('include', REGISTER_PATH);
+
+    // Verifikasi konten unik di halaman registrasi
+    cy.title().should('contain', REGISTER_PAGE_TITLE);
+    cy.contains('h4', REGISTER_PAGE_HEADING).should('be.visible');
+    cy.get(SELECTOR_LEVEL_ID).should('be.visible');
   });
 });
