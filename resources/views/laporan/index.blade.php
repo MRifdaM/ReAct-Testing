@@ -27,7 +27,7 @@
                             <select class="form-control" id="status" name="status">
                                 <option value="">- Semua Status -</option>
                                 <option value="pending">Pending</option>
-                                <option value="proses">Proses</option>
+                                <option value="diproses">Proses</option>
                                 <option value="selesai">Selesai</option>
                             </select>
                             <small class="form-text text-muted">Status Laporan</small>

@@ -6,10 +6,10 @@
 describe('Fitur Registrasi Pengguna', () => {
 
   // --- Konstanta untuk Selectors & Data ---
-  
+
   // URL & Path
   const REGISTER_PATH = '/register';
-  const LOGIN_PATH = '/login'; 
+  const LOGIN_PATH = '/login';
 
   // Selectors Form Registrasi
   const SELECTOR_LEVEL = 'select[name="level_id"]';
@@ -27,16 +27,16 @@ describe('Fitur Registrasi Pengguna', () => {
 
   // Selectors (Error)
   const SELECTOR_ERROR_ALERT = '.alert-danger';
-  
+
   // Selectors (Navigasi)
   const LINK_TEXT_SIGN_IN = 'Sign in';
   const SELECTOR_USERNAME_LOGIN = 'input[name="username"]';
 
   // Pesan
   const BROWSER_VALIDATION_MSG = 'Please fill out this field.';
-  const BROWSER_VALIDATION_MSG_SELECT = 'Please select an item in the list.'; 
+  const BROWSER_VALIDATION_MSG_SELECT = 'Please select an item in the list.';
   const SUCCESS_TITLE_TEXT = 'Pendaftaran Berhasil';
-  const ERROR_PASSWORD_MISMATCH = 'password'; 
+  const ERROR_PASSWORD_MISMATCH = 'password';
 
   /**
    * Hook ini berjalan sebelum setiap test case (`it`).
@@ -51,7 +51,7 @@ describe('Fitur Registrasi Pengguna', () => {
    * Memastikan pengguna dapat mendaftar dengan data yang valid,
    * melihat modal sukses, dan diarahkan ke halaman login.
    */
-  it('Harus berhasil mendaftarkan pengguna baru dan menampilkan modal sukses', () => {
+  it('TC_REG_001 - Harus berhasil mendaftarkan pengguna baru dan menampilkan modal sukses', () => {
     // Membuat data unik untuk username dan no_induk agar tes bisa diulang
     const uniqueId = Date.now();
     const username = `tes_user_${uniqueId}`;
@@ -78,28 +78,28 @@ describe('Fitur Registrasi Pengguna', () => {
     cy.contains(MODAL_LOGIN_BTN_TEXT).click();
 
     // 5. Verifikasi redirect ke halaman login.
-    cy.url().should('include', LOGIN_PATH); 
+    cy.url().should('include', LOGIN_PATH);
   });
 
   /**
    * Test Case: Gagal (Password Mismatch)
    * Memastikan pesan error server-side muncul jika password & konfirmasi tidak cocok.
    */
-  it('Harus menampilkan error server-side jika password dan konfirmasi tidak cocok', () => {
+  it('TC_REG_002 - Harus menampilkan error server-side jika password dan konfirmasi tidak cocok', () => {
     // 1. Isi form dengan password mismatch
-    cy.get(SELECTOR_LEVEL).select('3'); 
+    cy.get(SELECTOR_LEVEL).select('3');
     cy.get(SELECTOR_NO_INDUK).type('199001012020011001');
     cy.get(SELECTOR_NAMA).type('Dosen167');
     cy.get(SELECTOR_USERNAME).type('dosen167');
     cy.get(SELECTOR_PASSWORD).type('password123');
-    cy.get(SELECTOR_CONFIRM_PASS).type('apa ya jir'); 
+    cy.get(SELECTOR_CONFIRM_PASS).type('apa ya jir');
 
     // 2. Klik submit
     cy.get(SELECTOR_SUBMIT_BTN).click();
 
     // 3. Verifikasi alert error server-side muncul
     cy.get(SELECTOR_ERROR_ALERT).should('be.visible');
-    
+
     // 4. Verifikasi pesan error mengandung kata 'password'
     cy.get(SELECTOR_ERROR_ALERT).should('contain', ERROR_PASSWORD_MISMATCH);
 
@@ -112,7 +112,7 @@ describe('Fitur Registrasi Pengguna', () => {
    * Memastikan browser menampilkan validasi HTML5 'required' jika
    * field pertama (Level Pengguna) tidak diisi.
    */
-  it('Harus menampilkan validasi browser jika field wajib dikosongkan', () => {
+  it('TC_REG_003 - Harus menampilkan validasi browser jika field wajib dikosongkan', () => {
     // 1. Langsung klik submit tanpa mengisi apa pun
     cy.get(SELECTOR_SUBMIT_BTN).click();
 
@@ -128,7 +128,7 @@ describe('Fitur Registrasi Pengguna', () => {
    * Memastikan link "Sign in" berfungsi dan mengarahkan kembali
    * ke halaman login.
    */
-  it('Harus bisa kembali ke halaman login via link "Sign in"', () => {
+  it('TC_REG_004 - Harus bisa kembali ke halaman login via link "Sign in"', () => {
     // 1. Cari link "Sign in" dan klik
     cy.contains('a', LINK_TEXT_SIGN_IN).should('be.visible').click();
 

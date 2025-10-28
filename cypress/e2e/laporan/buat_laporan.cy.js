@@ -5,15 +5,10 @@
  * dan verifikasi data di tabel.
  */
 describe('Fitur Laporan Kerusakan', () => {
-  
+
   // --- Konstanta Login & Setup ---
-  const LOGIN_URL = '/login';
   const USERNAME_MAHASISWA = 'mahasiswa';
   const PASSWORD_MAHASISWA = 'mahasiswa';
-  const SELECTOR_USERNAME_INPUT = 'input#username';
-  const SELECTOR_PASSWORD_INPUT = 'input#password';
-  const SELECTOR_LOGIN_SUBMIT = 'button[type="submit"]';
-  const GREETING_DASHBOARD = 'Halo, Mahasiswa1';
   const LAPORAN_URL = '/laporan';
 
   // --- Konstanta Halaman Laporan ---
@@ -25,7 +20,6 @@ describe('Fitur Laporan Kerusakan', () => {
   const SELECTOR_MODAL_CONTENT = '#myModal .modal-content';
   const SELECTOR_MODAL_TITLE = '#myModal .modal-title';
   const MODAL_TITLE_TEXT = 'Tambah Laporan Kerusakan';
-  const SELECTOR_MODAL_FORM = '#form-create-laporan';
   const SELECTOR_MODAL_SUBMIT_BTN = '#form-create-laporan button[type="submit"]';
   const BTN_TEXT_SIMPAN_LAPORAN = 'Simpan Laporan';
 
@@ -37,7 +31,7 @@ describe('Fitur Laporan Kerusakan', () => {
   const SELECTOR_KERUSAKAN = 'select[name="tingkat_kerusakan"]';
   const SELECTOR_URGENSI = 'select[name="tingkat_urgensi"]';
   const SELECTOR_DAMPAK = 'select[name="dampak_kerusakan"]';
-  
+
   // --- Konstanta Verifikasi & Pesan ---
   const SELECTOR_SWAL_POPUP = '.swal2-popup';
   const SELECTOR_SWAL_TITLE = '.swal2-title';
@@ -55,13 +49,8 @@ describe('Fitur Laporan Kerusakan', () => {
     cy.task('resetDatabase');
 
     // 2. Login
-    cy.visit(LOGIN_URL);
-    cy.get(SELECTOR_USERNAME_INPUT).type(USERNAME_MAHASISWA);
-    cy.get(SELECTOR_PASSWORD_INPUT).type(PASSWORD_MAHASISWA);
-    cy.get(SELECTOR_LOGIN_SUBMIT).contains('Submit').click();
-    cy.url().should('include', '/'); // Verifikasi di dashboard
-    cy.contains('h5', GREETING_DASHBOARD).should('be.visible');
-    
+    cy.loginUI(USERNAME_MAHASISWA, PASSWORD_MAHASISWA);
+
     // 3. Kunjungi halaman yang akan dites
     cy.visit(LAPORAN_URL);
     cy.url().should('include', LAPORAN_URL);
@@ -71,7 +60,7 @@ describe('Fitur Laporan Kerusakan', () => {
    * Tes skenario "Happy Path": Pengguna berhasil membuat laporan kerusakan baru
    * dengan mengisi semua data yang valid.
    */
-  it('Harus berhasil membuat laporan kerusakan baru dengan data valid', () => {
+  it('TC-REP-001 - Harus berhasil membuat laporan kerusakan baru dengan data valid', () => {
     const judulLaporan = 'Cypress Test - Proyektor RT01 Mati Total';
 
     // Buka modal
@@ -106,7 +95,7 @@ describe('Fitur Laporan Kerusakan', () => {
    * Tes skenario validasi: Menampilkan pesan error jika field wajib
    * (contoh: Judul Laporan) tidak diisi saat submit.
    */
-  it('Harus menampilkan error validasi jika judul laporan tidak diisi', () => {
+  it('TC-REP-002 - Harus menampilkan error validasi jika judul laporan tidak diisi', () => {
     // Buka modal
     cy.contains('button', BTN_TEXT_BUAT_LAPORAN).click();
     cy.get(SELECTOR_MODAL_CONTENT).should('be.visible');
@@ -136,7 +125,7 @@ describe('Fitur Laporan Kerusakan', () => {
    * Tes skenario validasi: Menampilkan error jika field <select> wajib
    * (contoh: Lantai) tidak diisi.
    */
-  it('Harus menampilkan validasi browser jika field <select> wajib dikosongkan', () => {
+  it('TC-REP-003 - Harus menampilkan validasi browser jika field <select> wajib dikosongkan', () => {
     // Buka modal
     cy.contains('button', BTN_TEXT_BUAT_LAPORAN).click();
     cy.get(SELECTOR_MODAL_CONTENT).should('be.visible');

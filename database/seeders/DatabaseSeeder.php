@@ -23,7 +23,8 @@ class DatabaseSeeder extends Seeder
             BarangSeeder::class,
             SaranaSeeder::class,
             // LaporanSeeder::class,
-            SarPrasSeeder::class
+            SarPrasSeeder::class,
+            TransaksiTestSeeder::class,
         ]);
     }
 }
