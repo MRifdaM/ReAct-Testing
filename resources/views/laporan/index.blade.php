@@ -18,8 +18,8 @@
                     @if (session('error'))
                          <div class="alert alert-danger">{{ session('error') }}</div>
                     @endif
-                    <!-- Tombol Tambah Laporan -->
-                    <button onclick="modalAction('{{ url('/laporan/create_ajax') }}')" class="btn btn-info">Buat Laporan</button>
+                    <!-- Tombol Tambah Laporan (gunakan data-url untuk menghindari masalah quoting/parse) -->
+                    <button data-url="{{ url('/laporan/create_ajax') }}" onclick="modalAction(this.dataset.url)" class="btn btn-info">Buat Laporan</button>
 
                     <div class="form-group row">
                         <label class="col-form-label col-sm-2">Filter Status:</label>

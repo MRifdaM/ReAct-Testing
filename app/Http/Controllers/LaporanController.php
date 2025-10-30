@@ -1,23 +1,22 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\LaporanModel;
 use App\Models\GedungModel;
 use App\Models\LantaiModel;
+use App\Models\LaporanModel;
+use App\Models\RiwayatModel;
 use App\Models\RuangModel;
 use App\Models\SaranaModel;
 use App\Models\TeknisiModel;
-use App\Models\RiwayatModel;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
-use Exception;
 use Carbon\Carbon;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Yajra\DataTables\DataTables;
 
 class LaporanController extends Controller
 {
@@ -27,17 +26,17 @@ class LaporanController extends Controller
 
         $breadcrumbs = [
             'title' => 'Daftar Laporan',
-            'list' => ['home', 'laporan']
+            'list'  => ['home', 'laporan'],
         ];
         $page = (object) [
-            'title' => "Daftar Laporan"
+            'title' => "Daftar Laporan",
         ];
         $activeMenu = 'laporan';
         return view('laporan.index', [
-            'laporan' => $laporan,
+            'laporan'     => $laporan,
             'breadcrumbs' => $breadcrumbs,
-            'page' => $page,
-            'activeMenu' => $activeMenu
+            'page'        => $page,
+            'activeMenu'  => $activeMenu,
         ]);
     }
 
@@ -47,49 +46,49 @@ class LaporanController extends Controller
 
         $breadcrumbs = [
             'title' => 'Daftar Laporan',
-            'list' => ['home', 'riwayat']
+            'list'  => ['home', 'riwayat'],
         ];
         $page = (object) [
-            'title' => "Daftar Riwayat"
+            'title' => "Daftar Riwayat",
         ];
         $activeMenu = 'riwayat';
         return view('laporan.riwayat', [
-            'riwayat' => $riwayat,
+            'riwayat'     => $riwayat,
             'breadcrumbs' => $breadcrumbs,
-            'page' => $page,
-            'activeMenu' => $activeMenu
+            'page'        => $page,
+            'activeMenu'  => $activeMenu,
         ]);
     }
 
     public function bobot()
     {
         $laporan = LaporanModel::all();
-        $sarana = SaranaModel::all();
+        $sarana  = SaranaModel::all();
 
         // Calculate AHP weights
         $ahpWeights = $this->calculateAHPWeights();
 
         $breadcrumbs = [
             'title' => 'Pembobotan',
-            'list' => ['home', 'pembobotan']
+            'list'  => ['home', 'pembobotan'],
         ];
         $page = (object) [
-            'title' => "Pembobotan"
+            'title' => "Pembobotan",
         ];
         $activeMenu = 'bobot';
         return view('bobot.index', [
-            'laporan' => $laporan,
-            'sarana' => $sarana,
+            'laporan'     => $laporan,
+            'sarana'      => $sarana,
             'breadcrumbs' => $breadcrumbs,
-            'page' => $page,
-            'activeMenu' => $activeMenu,
-            'ahpWeights' => $ahpWeights // Pass AHP weights to the view
+            'page'        => $page,
+            'activeMenu'  => $activeMenu,
+            'ahpWeights'  => $ahpWeights, // Pass AHP weights to the view
         ]);
     }
 
     public function list(Request $request)
     {
-        $user = auth()->user();
+        $user         = auth()->user();
         $statusFilter = $request->get('status');
 
         $query = LaporanModel::with(['user', 'teknisi', 'sarana.barang'])
@@ -135,17 +134,17 @@ class LaporanController extends Controller
 
         $breadcrumbs = [
             'title' => 'Daftar Laporan',
-            'list' => ['home', 'kelola-laporan-kerusakan']
+            'list'  => ['home', 'kelola-laporan-kerusakan'],
         ];
         $page = (object) [
-            'title' => "Daftar Laporan"
+            'title' => "Daftar Laporan",
         ];
         $activeMenu = 'kelola';
         return view('laporan.kelola', [
-            'laporan' => $laporan,
+            'laporan'     => $laporan,
             'breadcrumbs' => $breadcrumbs,
-            'page' => $page,
-            'activeMenu' => $activeMenu
+            'page'        => $page,
+            'activeMenu'  => $activeMenu,
         ]);
     }
 
@@ -179,6 +178,8 @@ class LaporanController extends Controller
             $query->whereRaw('1 = 0');
         }
 
+        $currentUser = auth()->user();
+
         return datatables()->of($query)
             ->addIndexColumn()
             ->addColumn('laporan_id', function ($row) {
@@ -199,10 +200,11 @@ class LaporanController extends Controller
             ->addColumn('bobot', function ($row) {
                 return $row->bobot ?? '-';
             })
-            ->addColumn('aksi', function ($row) {
+            ->addColumn('aksi', function ($row) use ($currentUser) {
                 $btn = '<button onclick="modalAction(\'' . url('/laporan/show_kelola_ajax/' . $row->laporan_id) . '\')" class="btn btn-info btn-sm">Detail</button> ';
 
-                if ($row->status_laporan === 'diproses') {
+                // Hanya tampilkan tombol 'Tugaskan Teknisi' kepada user dengan peran 'sarpras'
+                if ($row->status_laporan === 'diproses' && optional($currentUser->level)->level_kode === 'sarpras') {
                     $btn .= '<br><a href="' . url('/laporan/tugaskan_teknisi/' . $row->laporan_id) . '" class="btn btn-warning btn-sm mt-1" onclick="modalAction(this.href); return false;">Tugaskan Teknisi</a>';
                 }
 
@@ -217,11 +219,11 @@ class LaporanController extends Controller
     {
         $laporan = LaporanModel::findOrFail($id);
 
-        // Cek apakah user memiliki akses (misalnya hanya sarpras)
-        if (Auth::user()->username !== 'sarpras') {
+        // Cek apakah user memiliki akses (hanya user dengan role 'sarpras')
+        if (Auth::user()->level->level_kode !== 'sarpras') {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Anda tidak memiliki akses untuk tindakan ini.'
+                'status'  => 'error',
+                'message' => 'Anda tidak memiliki akses untuk tindakan ini.',
             ], 403);
         }
 
@@ -234,7 +236,7 @@ class LaporanController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'html' => $html
+                'html'   => $html,
             ]);
         }
 
@@ -242,33 +244,33 @@ class LaporanController extends Controller
             // Cek apakah laporan sudah dikerjakan
             if ($laporan->status_laporan === 'dikerjakan') {
                 return response()->json([
-                    'status' => 'warning',
-                    'message' => 'Laporan sudah dalam status Dikerjakan. Tidak dapat menugaskan ulang teknisi.'
+                    'status'  => 'warning',
+                    'message' => 'Laporan sudah dalam status Dikerjakan. Tidak dapat menugaskan ulang teknisi.',
                 ], 400);
             }
 
             // Validasi input
             $request->validate([
                 'teknisi_id' => 'required|exists:m_teknisi,teknisi_id',
-                'catatan' => 'nullable|string'
+                'catatan'    => 'nullable|string',
             ]);
 
             // Update laporan
             $laporan->update([
-                'teknisi_id' => $request->teknisi_id,
-                'status_laporan' => 'Dikerjakan',
+                'teknisi_id'       => $request->teknisi_id,
+                'status_laporan'   => 'Dikerjakan',
                 'tanggal_diproses' => now(),
             ]);
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Teknisi berhasil ditugaskan.'
+                'status'  => 'success',
+                'message' => 'Teknisi berhasil ditugaskan.',
             ]);
         }
 
         return response()->json([
-            'status' => 'error',
-            'message' => 'Metode tidak diizinkan.'
+            'status'  => 'error',
+            'message' => 'Metode tidak diizinkan.',
         ], 405);
     }
 
@@ -278,23 +280,23 @@ class LaporanController extends Controller
             $laporan = LaporanModel::findOrFail($id);
             if ($laporan->status_laporan !== 'dikerjakan') {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'Laporan tidak dalam status Dikerjakan.'
+                    'status'  => 'error',
+                    'message' => 'Laporan tidak dalam status Dikerjakan.',
                 ], 400);
             }
 
-            $laporan->status_laporan = 'selesai';
+            $laporan->status_laporan  = 'selesai';
             $laporan->tanggal_selesai = now();
             $laporan->save();
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Laporan berhasil diselesaikan.'
+                'status'  => 'success',
+                'message' => 'Laporan berhasil diselesaikan.',
             ]);
         } catch (Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal memperbarui status laporan: ' . $e->getMessage()
+                'status'  => 'error',
+                'message' => 'Gagal memperbarui status laporan: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -311,16 +313,16 @@ class LaporanController extends Controller
             $laporan->refresh();
 
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Perhitungan bobot berhasil',
-                'bobot' => $laporan->bobot
+                'bobot'   => $laporan->bobot,
             ]);
         } catch (Exception $e) {
             Log::error('Failed to calculate bobot for laporan ' . $id . ': ' . $e->getMessage());
 
             return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal menghitung bobot: ' . $e->getMessage()
+                'status'  => 'error',
+                'message' => 'Gagal menghitung bobot: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -331,26 +333,26 @@ class LaporanController extends Controller
 
         // Map values to scores
         $kerusakanMap = ['rendah' => 1, 'sedang' => 2, 'tinggi' => 3];
-        $urgensiMap = ['rendah' => 1, 'sedang' => 2, 'tinggi' => 3];
+        $urgensiMap   = ['rendah' => 1, 'sedang' => 2, 'tinggi' => 3];
         $frekuensiMap = ['tahunan' => 1, 'bulanan' => 2, 'mingguan' => 3, 'harian' => 4];
-        $dampakMap = ['kecil' => 1, 'sedang' => 2, 'besar' => 3];
+        $dampakMap    = ['kecil' => 1, 'sedang' => 2, 'besar' => 3];
 
         $kerusakan = $kerusakanMap[strtolower($laporan->tingkat_kerusakan)] ?? 0;
-        $urgensi = $urgensiMap[strtolower($laporan->tingkat_urgensi)] ?? 0;
+        $urgensi   = $urgensiMap[strtolower($laporan->tingkat_urgensi)] ?? 0;
         $frekuensi = $frekuensiMap[strtolower($sarana->frekuensi_penggunaan)] ?? 0;
-        $dampak = $dampakMap[strtolower($laporan->dampak_kerusakan)] ?? 0;
+        $dampak    = $dampakMap[strtolower($laporan->dampak_kerusakan)] ?? 0;
 
         $jumlahLaporan = $sarana->jumlah_laporan ?? 1;
 
         // Normalize jumlah_laporan as a cost criterion
-        $totalJumlahLaporan = SaranaModel::sum('jumlah_laporan');
+        $totalJumlahLaporan      = SaranaModel::sum('jumlah_laporan');
         $normalizedJumlahLaporan = 1 - ($jumlahLaporan / ($totalJumlahLaporan ?: 1));
 
         $tanggalOperasional = Carbon::parse($sarana->tanggal_operasional);
-        $now = Carbon::now();
-        $usia = $now->diffInDays($tanggalOperasional);
-        $maxUsia = 3650;
-        $normalizedUsia = 1 - ($usia / $maxUsia);
+        $now                = Carbon::now();
+        $usia               = $now->diffInDays($tanggalOperasional);
+        $maxUsia            = 3650;
+        $normalizedUsia     = 1 - ($usia / $maxUsia);
 
         // Calculate AHP weights using pairwise comparison
         $ahpWeights = $this->calculateAHPWeights();
@@ -365,12 +367,12 @@ class LaporanController extends Controller
 
         // SAW Method (remain unchanged)
         $sawBobot = [
-            'kerusakan' => 0.2,
-            'urgensi' => 0.2,
-            'frekuensi' => 0.2,
-            'dampak' => 0.1,
+            'kerusakan'      => 0.2,
+            'urgensi'        => 0.2,
+            'frekuensi'      => 0.2,
+            'dampak'         => 0.1,
             'jumlah_laporan' => 0.2,
-            'usia' => 0.1
+            'usia'           => 0.1,
         ];
 
         $sawScore = $sawBobot['kerusakan'] * $kerusakan +
@@ -438,11 +440,11 @@ class LaporanController extends Controller
 
         // Convert to square matrix
         $criteria = ['kerusakan', 'urgensi', 'frekuensi', 'dampak', 'jumlah_laporan', 'usia'];
-        $matrix = array_fill(0, count($criteria), array_fill(0, count($criteria), 0));
+        $matrix   = array_fill(0, count($criteria), array_fill(0, count($criteria), 0));
 
         foreach ($pairwiseMatrix as $comparison) {
-            $row = array_search($comparison[0], $criteria);
-            $col = array_search($comparison[1], $criteria);
+            $row                = array_search($comparison[0], $criteria);
+            $col                = array_search($comparison[1], $criteria);
             $matrix[$row][$col] = $comparison[2];
             $matrix[$col][$row] = 1 / $comparison[2]; // Reciprocal
         }
@@ -472,7 +474,7 @@ class LaporanController extends Controller
         // Calculate priority vector (average of rows)
         $priorityVector = [];
         for ($i = 0; $i < count($criteria); $i++) {
-            $rowSum = array_sum($normalizedMatrix[$i]);
+            $rowSum                        = array_sum($normalizedMatrix[$i]);
             $priorityVector[$criteria[$i]] = $rowSum / count($criteria);
         }
 
@@ -493,7 +495,7 @@ class LaporanController extends Controller
         $lambdaMax /= count($criteria);
 
         $consistencyIndex = ($lambdaMax - count($criteria)) / (count($criteria) - 1);
-        $randomIndex = [0, 0, 0.58, 0.9, 1.12, 1.24, 1.32, 1.41]; // RI for n=1 to 8
+        $randomIndex      = [0, 0, 0.58, 0.9, 1.12, 1.24, 1.32, 1.41]; // RI for n=1 to 8
         $consistencyRatio = $consistencyIndex / $randomIndex[count($criteria) - 1];
 
         // Check consistency (CR should be < 0.1)
@@ -552,11 +554,11 @@ class LaporanController extends Controller
         ];
 
         $criteria = ['kerusakan', 'urgensi', 'frekuensi', 'dampak', 'jumlah_laporan', 'usia'];
-        $matrix = array_fill(0, count($criteria), array_fill(0, count($criteria), 0));
+        $matrix   = array_fill(0, count($criteria), array_fill(0, count($criteria), 0));
 
         foreach ($pairwiseMatrix as $comparison) {
-            $row = array_search($comparison[0], $criteria);
-            $col = array_search($comparison[1], $criteria);
+            $row                = array_search($comparison[0], $criteria);
+            $col                = array_search($comparison[1], $criteria);
             $matrix[$row][$col] = $comparison[2];
             $matrix[$col][$row] = 1 / $comparison[2];
         }
@@ -589,40 +591,40 @@ class LaporanController extends Controller
             $laporan = LaporanModel::findOrFail($id);
             if ($laporan->status_laporan === 'diproses') {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'Laporan sudah dalam status Proses.'
+                    'status'  => 'error',
+                    'message' => 'Laporan sudah dalam status Proses.',
                 ], 400);
             } elseif ($laporan->status_laporan === 'dikerjakan') {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'Laporan sudah dalam status Dikerjakan.'
+                    'status'  => 'error',
+                    'message' => 'Laporan sudah dalam status Dikerjakan.',
                 ], 400);
             } elseif ($laporan->status_laporan === 'selesai') {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'Laporan sudah dalam status Selesai.'
+                    'status'  => 'error',
+                    'message' => 'Laporan sudah dalam status Selesai.',
                 ], 400);
             }
             $laporan->status_laporan = 'Diproses';
             $laporan->save();
             return response()->json([
-                'status' => 'success',
-                'message' => 'Laporan berhasil diterima, Laporan akan segera diproses.'
+                'status'  => 'success',
+                'message' => 'Laporan berhasil diterima, Laporan akan segera diproses.',
             ]);
         } catch (Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal memperbarui status laporan: ' . $e->getMessage()
+                'status'  => 'error',
+                'message' => 'Gagal memperbarui status laporan: ' . $e->getMessage(),
             ], 500);
         }
     }
 
     public function reject($id, Request $request)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Anda harus login terlebih dahulu.'
+                'status'  => 'error',
+                'message' => 'Anda harus login terlebih dahulu.',
             ], 401);
         }
 
@@ -631,37 +633,37 @@ class LaporanController extends Controller
         // Cek apakah pengguna memiliki akses (misalnya hanya sarpras)
         if (Auth::user()->username !== 'sarpras') {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Anda tidak memiliki akses untuk tindakan ini.'
+                'status'  => 'error',
+                'message' => 'Anda tidak memiliki akses untuk tindakan ini.',
             ], 403);
         }
 
         if ($laporan->status_laporan === 'diproses') {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Laporan Tidak bisa ditolak karena sedang diproses!'
+                'status'  => 'error',
+                'message' => 'Laporan Tidak bisa ditolak karena sedang diproses!',
             ], 400);
         } elseif ($laporan->status_laporan === 'dikerjakan') {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Laporan Tidak bisa ditolak karena sedang dikerjakan!'
+                'status'  => 'error',
+                'message' => 'Laporan Tidak bisa ditolak karena sedang dikerjakan!',
             ], 400);
         } elseif ($laporan->status_laporan === 'selesai') {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Laporan Tidak bisa ditolak karena sudah selesai!'
+                'status'  => 'error',
+                'message' => 'Laporan Tidak bisa ditolak karena sudah selesai!',
             ], 400);
         }
 
         // Proses penolakan laporan
         $laporan->update([
-            'status_laporan' => 'ditolak',
+            'status_laporan'  => 'ditolak',
             'tanggal_selesai' => now(),
         ]);
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Laporan berhasil ditolak.'
+            'status'  => 'success',
+            'message' => 'Laporan berhasil ditolak.',
         ]);
     }
 
@@ -674,17 +676,19 @@ class LaporanController extends Controller
             'sarana',
             'sarana.barang',
             'user',
-            'teknisi.user'
+            'teknisi.user',
         ])->findOrFail($id);
 
         return view('laporan.show_ajax', [
-            'laporan' => $laporan
+            'laporan' => $laporan,
         ]);
     }
 
     public function getLaporanFotoAttribute($value)
     {
-        if (!$value) return null;
+        if (! $value) {
+            return null;
+        }
 
         // Hapus duplikasi path
         $filename = str_replace('laporan_files/', '', $value);
@@ -700,7 +704,7 @@ class LaporanController extends Controller
 
     public function show_kelola($id)
     {
-        $user = Auth::user();
+        $user    = Auth::user();
         $laporan = LaporanModel::with([
             'gedung',
             'lantai',
@@ -708,19 +712,19 @@ class LaporanController extends Controller
             'sarana',
             'sarana.barang',
             'user',
-            'teknisi.user'
+            'teknisi.user',
         ])->findOrFail($id);
         $sarana = SaranaModel::findOrFail($id);
 
         $html = view('laporan.show_kelola_detail', [
             'laporan' => $laporan,
-            'sarana' => $sarana,
-            'user' => $user,
+            'sarana'  => $sarana,
+            'user'    => $user,
         ])->render();
 
         return response()->json([
             'status' => 'success',
-            'html' => $html
+            'html'   => $html,
         ]);
     }
 
@@ -731,7 +735,7 @@ class LaporanController extends Controller
         return view('laporan.create_ajax', [
             'gedung' => $gedung,
             'lantai' => $lantai,
-            'ruang' => [],
+            'ruang'  => [],
             'sarana' => [],
         ]);
     }
@@ -740,30 +744,30 @@ class LaporanController extends Controller
     {
         if ($request->ajax() || $request->wantsJson()) {
             $validator = Validator::make($request->all(), [
-                'gedung_id' => 'required|exists:m_gedung,gedung_id',
-                'lantai_id' => 'required|exists:m_lantai,lantai_id',
-                'ruang_id' => 'required|exists:m_ruang,ruang_id',
-                'sarana_id' => 'required|exists:m_sarana,sarana_id',
-                'laporan_judul' => 'required|string|max:100',
-                'laporan_foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+                'gedung_id'         => 'required|exists:m_gedung,gedung_id',
+                'lantai_id'         => 'required|exists:m_lantai,lantai_id',
+                'ruang_id'          => 'required|exists:m_ruang,ruang_id',
+                'sarana_id'         => 'required|exists:m_sarana,sarana_id',
+                'laporan_judul'     => 'required|string|max:100',
+                'laporan_foto'      => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
                 'tingkat_kerusakan' => 'required|in:rendah,sedang,tinggi,kritis',
-                'tingkat_urgensi' => 'required|in:rendah,sedang,tinggi,kritis',
-                'dampak_kerusakan' => 'required|in:kecil,sedang,besar',
+                'tingkat_urgensi'   => 'required|in:rendah,sedang,tinggi,kritis',
+                'dampak_kerusakan'  => 'required|in:kecil,sedang,besar',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'status' => 'error',
-                    'errors' => $validator->errors()
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 
-            $data = $validator->validated();
+            $data            = $validator->validated();
             $data['user_id'] = Auth::user()->user_id;
 
             if ($request->hasFile('laporan_foto')) {
-                $file = $request->file('laporan_foto');
-                $path = 'laporan_files';
+                $file     = $request->file('laporan_foto');
+                $path     = 'laporan_files';
                 $filename = 'LAP-' . Str::upper(Str::random(10)) . '.' . $file->getClientOriginalExtension();
                 $file->move(public_path($path), $filename);
                 $data['laporan_foto'] = $path . '/' . $filename;
@@ -786,9 +790,9 @@ class LaporanController extends Controller
             }
 
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Laporan berhasil dibuat dan bobot telah dihitung',
-                'data' => $laporan->fresh() // Refresh to get the calculated bobot
+                'data'    => $laporan->fresh(), // Refresh to get the calculated bobot
             ], 200);
         }
 
@@ -804,21 +808,21 @@ class LaporanController extends Controller
                     ->firstOrFail();
 
                 $validator = Validator::make($request->all(), [
-                    'gedung_id' => 'required|exists:m_gedung,gedung_id',
-                    'lantai_id' => 'required|exists:m_lantai,lantai_id',
-                    'ruang_id' => 'required|exists:m_ruang,ruang_id',
-                    'sarana_id' => 'required|exists:m_sarana,sarana_id',
-                    'laporan_judul' => 'required|string|max:100',
-                    'laporan_foto' => 'nullable|image|max:2048',
+                    'gedung_id'         => 'required|exists:m_gedung,gedung_id',
+                    'lantai_id'         => 'required|exists:m_lantai,lantai_id',
+                    'ruang_id'          => 'required|exists:m_ruang,ruang_id',
+                    'sarana_id'         => 'required|exists:m_sarana,sarana_id',
+                    'laporan_judul'     => 'required|string|max:100',
+                    'laporan_foto'      => 'nullable|image|max:2048',
                     'tingkat_kerusakan' => 'required|in:rendah,sedang,tinggi',
-                    'tingkat_urgensi' => 'required|in:rendah,sedang,tinggi',
-                    'dampak_kerusakan' => 'required|in:kecil,sedang,besar',
+                    'tingkat_urgensi'   => 'required|in:rendah,sedang,tinggi',
+                    'dampak_kerusakan'  => 'required|in:kecil,sedang,besar',
                 ]);
 
                 if ($validator->fails()) {
                     return response()->json([
                         'status' => 'error',
-                        'errors' => $validator->errors()
+                        'errors' => $validator->errors(),
                     ], 422);
                 }
 
@@ -828,8 +832,8 @@ class LaporanController extends Controller
                     if ($laporan->laporan_foto && Storage::exists('public/laporan_files/' . $laporan->laporan_foto)) {
                         Storage::delete('public/' . $laporan->laporan_foto);
                     }
-                    $file = $request->file('laporan_foto');
-                    $path = 'laporan_files';
+                    $file     = $request->file('laporan_foto');
+                    $path     = 'laporan_files';
                     $filename = 'LAP-' . Str::upper(Str::random(10)) . '.' . $file->getClientOriginalExtension();
                     $file->move(public_path($path), $filename);
                     $data['laporan_foto'] = $path . '/' . $filename;
@@ -838,14 +842,14 @@ class LaporanController extends Controller
                 $laporan->update($data);
 
                 return response()->json([
-                    'status' => 'success',
+                    'status'  => 'success',
                     'message' => 'Laporan berhasil diperbarui',
-                    'data' => $laporan
+                    'data'    => $laporan,
                 ], 200);
             } catch (Exception $e) {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'Laporan tidak ditemukan atau Anda tidak memiliki akses.'
+                    'status'  => 'error',
+                    'message' => 'Laporan tidak ditemukan atau Anda tidak memiliki akses.',
                 ], 404);
             }
         }
@@ -865,35 +869,35 @@ class LaporanController extends Controller
 
         if ($laporan->status_laporan !== 'dikerjakan') {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Laporan tidak dalam status Dikerjakan.'
+                'status'  => 'error',
+                'message' => 'Laporan tidak dalam status Dikerjakan.',
             ], 400);
         }
 
         $request->validate([
             'tindakan' => 'required|string',
-            'bahan' => 'nullable|string',
-            'biaya' => 'nullable|numeric',
+            'bahan'    => 'nullable|string',
+            'biaya'    => 'nullable|numeric',
         ]);
 
-        $riwayatPerbaikan = new RiwayatModel();
-        $riwayatPerbaikan->laporan_id = $laporan->laporan_id;
-        $riwayatPerbaikan->teknisi_id = $laporan->teknisi_id;
-        $riwayatPerbaikan->tindakan = $request->tindakan;
-        $riwayatPerbaikan->bahan = $request->bahan;
-        $riwayatPerbaikan->biaya = $request->biaya;
-        $riwayatPerbaikan->status = 'selesai';
-        $riwayatPerbaikan->waktu_mulai = now();
+        $riwayatPerbaikan                = new RiwayatModel();
+        $riwayatPerbaikan->laporan_id    = $laporan->laporan_id;
+        $riwayatPerbaikan->teknisi_id    = $laporan->teknisi_id;
+        $riwayatPerbaikan->tindakan      = $request->tindakan;
+        $riwayatPerbaikan->bahan         = $request->bahan;
+        $riwayatPerbaikan->biaya         = $request->biaya;
+        $riwayatPerbaikan->status        = 'selesai';
+        $riwayatPerbaikan->waktu_mulai   = now();
         $riwayatPerbaikan->waktu_selesai = now();
         $riwayatPerbaikan->save();
 
-        $laporan->status_laporan = 'selesai';
+        $laporan->status_laporan  = 'selesai';
         $laporan->tanggal_selesai = now();
         $laporan->save();
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Laporan berhasil diselesaikan.'
+            'status'  => 'success',
+            'message' => 'Laporan berhasil diselesaikan.',
         ]);
     }
 
@@ -921,10 +925,10 @@ class LaporanController extends Controller
 
         $saranaFormatted = $sarana->map(function ($item) {
             return [
-                'sarana_id' => $item->sarana_id,
+                'sarana_id'   => $item->sarana_id,
                 'sarana_kode' => $item->barang->barang_kode ?? 'KODE-' . $item->sarana_id,
                 'sarana_nama' => $item->barang->barang_nama ?? 'Sarana #' . $item->sarana_id,
-                'nomor_urut' => $item->nomor_urut ?? ''
+                'nomor_urut'  => $item->nomor_urut ?? '',
             ];
         });
 
@@ -933,22 +937,22 @@ class LaporanController extends Controller
 
     public function getRuangDanSarana($lantai_id)
     {
-        $ruang = RuangModel::where('lantai_id', $lantai_id)->get();
+        $ruang    = RuangModel::where('lantai_id', $lantai_id)->get();
         $ruangIDs = $ruang->pluck('ruang_id');
 
         $sarana = SaranaModel::whereIn('ruang_id', $ruangIDs)->with('barang')->get();
 
         $saranaFormatted = $sarana->map(function ($item) {
             return [
-                'sarana_id' => $item->sarana_id,
+                'sarana_id'   => $item->sarana_id,
                 'sarana_kode' => $item->barang->barang_kode ?? 'KODE-' . $item->sarana_id,
                 'sarana_nama' => $item->barang->barang_nama ?? 'Sarana #' . $item->sarana_id,
-                
+
             ];
         });
         return response()->json([
-            'ruang' => $ruang,
-            'sarana' => $saranaFormatted
+            'ruang'  => $ruang,
+            'sarana' => $saranaFormatted,
         ]);
     }
 }

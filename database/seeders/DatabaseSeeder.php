@@ -22,9 +22,12 @@ class DatabaseSeeder extends Seeder
             RuangSeeder::class,
             BarangSeeder::class,
             SaranaSeeder::class,
-            // LaporanSeeder::class,
             SarPrasSeeder::class,
             TransaksiTestSeeder::class,
+            // Call LaporanSeeder last so it is not wiped by other test seeders that truncate tables
+            LaporanSeeder::class,
+            // Insert feedback after laporan so feedback refers to existing laporan rows
+            FeedbackSeeder::class,
         ]);
     }
 }
